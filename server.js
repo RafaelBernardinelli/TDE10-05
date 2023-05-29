@@ -1,12 +1,12 @@
-const express = require('express')
+const express = require("express");
 
-const lists = require("./routes/lists")
+const lists = require("./routes/lists");
+const users = require("./routes/users");
 
-const server = express()
-server.use(express.json())
+const server = express();
+server.use(express.json());
 
-server.use(lists.router)
+server.use(lists.router);
+server.use(users.router);
 
-module.exports = {
-    server
-}
+module.exports = { server };

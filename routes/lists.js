@@ -1,51 +1,59 @@
-const express = require("express")
-const { deleteItemList, getAllLists, saveList, updateList } = require("../database/list")
-const router = express.Router()
+const express = require("express");
+const {
+  deleteItemList,
+  getAllLists,
+  saveList,
+  updateList,
+} = require("../database/list");
+const router = express.Router();
+const { auth } = require("../middlerwares/auth");
 
-router.get('/tasks', async (req, res) => {
-    const listAll = await getAllLists()
-    res.json({
-        toDoList: listAll
-    })
-})
-
-router.post('/tasks', async (req, res) => {
-    const newTask = {
-        id: toDoList.length + 1,
-        name: req.body.name,
-        description: req.body.description,
-        isDone: req.body.isDone
-    }
-    const newList = await saveList(newTask)
+router.get("/tasks", auth, async (req, res) => {
+  try {
+    const listAll = await getAllLists();
 
     res.json({
-        newToDoList: newList
-    })
-})
+      listAll,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 
-router.put('/tasks/:id', async (req, res) => {
-    const id = Number(req.params.id)
+router.post("/tasks", auth, async (req, res) => {
+  const newTask = {
+    nome: req.body.name,
+    descricao: req.body.description,
+    isDone: req.body.isDone,
+  };
+  const newList = await saveList(newTask);
 
-    const newListUpdated = await updateList(id, {
-        name: req.body.name,
-        description: req.body.description,
-        isDone: req.body.isDone
-    })
-    res.json({
-        newListUpdated
-    })
-})
+  res.json({
+    newToDoList: newList,
+  });
+});
 
-router.delete('/tasks/:id', async (req, res) => {
-    const id = Number(req.params.id)
+router.put("/tasks/:id", auth, async (req, res) => {
+  const id = Number(req.params.id);
 
-    await deleteItemList(id)
+  const newListUpdated = await updateList(id, {
+    nome: req.body.name,
+    descricao: req.body.description,
+    isDone: req.body.isDone,
+  });
+  res.json({
+    newListUpdated,
+  });
+});
 
-    res.status(204).send()
-})
+router.delete("/tasks/:id", auth, async (req, res) => {
+  const id = Number(req.params.id);
 
-router.listen(port, () => {
-    console.log("server running on port", port)
-})
+  await deleteItemList(id);
 
+  res.status(204).send();
+});
 
+module.exports = {
+  router,
+};

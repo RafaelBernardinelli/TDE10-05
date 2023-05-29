@@ -1,67 +1,82 @@
-const express = require('express')
-const { saveUser, findUserByEmail, findUserById } = require('../database/users')
-const router = express.Router()
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
-const { auth } = require('../middlerwares/auth')
+const express = require("express");
+const {
+  saveUser,
+  findUserByEmail,
+  findUserById,
+} = require("../database/users");
 
-router.post('/register', auth, async (req, res) => {
-   try {
-    const isEmailAlreadyUsed = await findUserByEmail(req.body.email)
-    if (isEmailAlreadyUsed) return res.status(400).json({
-        message: "Email já cadastrado"
-    })
-    const hashedPassword = bcrypt.hashSync(req.body.password, 10)
+const router = express.Router();
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+router.post("/register", async (req, res) => {
+  try {
+    const isEmailAlreadyUsed = await findUserByEmail(req.body.email);
+    if (isEmailAlreadyUsed)
+      return res.status(400).json({
+        message: "Email já cadastrado",
+      });
+    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
 
     const user = {
-        name: req.body.name,
-        email: req.body.email,
-        password: hashedPassword
-    }
+      name: req.body.name,
+      email: req.body.email,
+      password: hashedPassword,
+    };
 
-    const saveUser = await saveUser(user)
-    delete saveUser.password
+    const saveUsers = await saveUser(user);
+    delete saveUsers.password;
 
     res.status(201).json({
-        user: saveUser
-    })
-   } catch (error) {
-    req.status(500).json({
-        message: "Server error"
-    })
-   }
-})
+      user: saveUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
 
-router.post('/login', auth, async (req, res) => {
-    const email = req.body.email
-    const password = req.body.password
+router.post("/login", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
 
-    const user = await findUserByEmail(email)
+  if (!email) return res.status(422).json({ message: "email not provided" });
 
-    if (!user) return req.status(401).send()
+  const user = await findUserByEmail(email);
 
-    const hasPassword = bcrypt.compareSync(password, user.password)
+  if (!user) return req.status(401).send();
 
-    if (!hasPassword) return req.status(401).send()
+  const hasPassword = bcrypt.compareSync(password, user.password);
 
-    const secret = process.env.SECRET
+  if (!hasPassword) return req.status(401).send();
 
-    const token = jwt.sign({
-        userId: user.id,
-        name: user.name
-    }, secret)
+  const secret = process.env.SECRET;
 
-    res.json({
-        sucess: true,
-        token
-    })
-})
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      name: user.name,
+    },
+    secret
+  );
 
-router.get('/profile', auth, async (req, res) => {
-    const user = await findUserById(req.body.userId)
+  res.json({
+    sucess: true,
+    token,
+  });
+});
 
-    delete user.password
-    res.json({
-        user
-    })
-})
+router.get("/profile", async (req, res) => {
+  const user = await findUserById(req.body.userId);
+
+  delete user.password;
+  res.json({
+    user,
+  });
+});
+
+module.exports = {
+  router,
+};
